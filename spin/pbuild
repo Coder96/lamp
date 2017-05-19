@@ -1,0 +1,48 @@
+#!/usr/bin/php
+<?php
+
+
+/*
+
+		Run this program from where the spin file is located.
+
+*/
+
+
+$spinFile = $argv[1];
+
+$fileParts = pathinfo($spinFile);
+
+$fileName = basename($fileParts['basename'], '.' . $fileParts['extension'] );
+
+$cmd = "/opt/openspin $fileName.spin -e -o tmp/$fileName.eeprom -d";
+
+$compileOut = system($cmd, $stat);
+
+
+/*
+
+	#define DOWNLOAD_RUN_BINARY 1
+	#define DOWNLOAD_EEPROM 2
+	#define DOWNLOAD_RUN_EEPROM 3
+	#define DOWNLOAD_SHUTDOWN 4 
+
+	$ pload <port> <filename.eeprom or filename.binary> -p1   <== load the program into the prop's HUB memory and run the program
+	$ pload <port> <filename.eeprom or filename.binary> -p2   <== load the prop's eeprom, but don't run the program
+	$ pload <port> <filename.eeprom or filename.binary> -p3   <== load the prop's eeprom & run the program
+
+*/
+
+if(stristr($compileOut, 'Program size is') ){
+	echo("Program Compiled\n");
+	$loadOut = system("/opt/pload /dev/ttyUSB0 tmp/$fileName.eeprom -p3 ", $stat);
+	echo("\n");
+} else {
+	echo("Error in compile\n");
+}
+
+
+
+
+
+

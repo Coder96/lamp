@@ -234,29 +234,38 @@
 	*/
 	function copyToFrame(selectedOption){
 		
-		var wName = '';
+		var frameName = '';
+		var framePauseName = '';
 		
 		if(selectedOption == "New"){
 			var tf = document.getElementById("sCopyToFrame");
 			var tf_option = document.createElement("option");
 			
 			document.getElementById('FrameCounter').value = parseInt(document.getElementById('FrameCounter').value) + 1;
-			wName = "Frame " + document.getElementById('FrameCounter').value;
-			tf_option.text = wName;
+			frameName = "Frame " + document.getElementById('FrameCounter').value;
+			framePauseName = "FramePause " + document.getElementById('FrameCounter').value;
+			
+			tf_option.text = frameName;
 			tf.add(tf_option);
 			
 			var ff = document.getElementById("sCopyFromFrame");
 			var ff_option = tf_option.cloneNode(true);
 			ff.add(ff_option);
 			
-			document.getElementById('sCopyToFrame').value = wName;
+			document.getElementById('sCopyToFrame').value = frameName;
 			
-			var dummy = '<INPUT type="hidden" id="' + wName.replace(/ /g, '_') + '" value="">\n';
+			var dummy = '<INPUT type="hidden" id="' + frameName.replace(/ /g, '_') + '" value="">\n';
 			document.getElementById('framesDiv').innerHTML += dummy; 
+			
+			dummy = '<INPUT type="hidden" id="' + framePauseName.replace(/ /g, '_') + '" value="">\n';
+			document.getElementById('framesPauseDiv').innerHTML += dummy; 
+			
 		} else {
-			wName = selectedOption.replace(/ /g, '_');
+			frameName = selectedOption.replace(/ /g, '_');
+			framePauseName = "FramePause " + frameName.substr(frameName.indexOf('_')+1);
 		}
-		document.getElementById(wName.replace(/ /g, '_')).value = document.getElementById('outScreen').value;
+		document.getElementById(frameName.replace(/ /g, '_')).value = document.getElementById('outScreen').value;
+		document.getElementById(framePauseName.replace(/ /g, '_')).value = document.getElementById('frameMicroseconds').value;
 		
 	}
 	/******************************************************************************************
@@ -272,10 +281,6 @@
 	*
 	*
 	*/
-	/******************************************************************************************
-	*
-	*
-	*/
 	function movethoroughFames(direction){
 			
 		var numberOfFrames = parseInt(document.getElementById('FrameCounter').value);
@@ -287,16 +292,147 @@
 				startFrame = 2;
 			}
 			startFrame = startFrame - 1;
+			document.getElementById('sCopyFromFrame').value = 'Frame ' + startFrame;
 			loadScreen('Frame_' + startFrame);
 		} else {
 			if(startFrame >= numberOfFrames){
 				startFrame = numberOfFrames - 1;
 			}
 			startFrame = startFrame + 1;
+			document.getElementById('sCopyFromFrame').value = 'Frame ' + startFrame;
 			loadScreen('Frame_' + startFrame);
 		}
 		
 		document.getElementById('frameMovementBox').value = startFrame;
 		
 	}
-	
+	/******************************************************************************************
+	*
+	*
+	*/
+	function importXML(){
+		var frameCnt = document.getElementById('FrameCounter').value;
+		
+		var picture = " ";
+		var pause		= " ";
+		
+		if(frameCnt > 0){
+			var ctf = document.getElementById("sCopyToFrame");
+			var cff = document.getElementById("sCopyFromFrame");
+			
+			for(xCtr = 1; xCtr <= frameCnt; xCtr++ ){
+				ctf.remove(2);
+				cff.remove(1);
+			}
+			ctf.value = '';
+		}
+		document.getElementById('FrameCounter').value = 0;
+		document.getElementById('framesDiv').innerHTML = '';
+		
+		var parser = new DOMParser();
+		var xmlDoc = parser.parseFromString(document.getElementById('xmlstream').value, "text/xml");
+		
+		var frameCnt = xmlDoc.getElementsByTagName("frameCounter")[0].childNodes[0].nodeValue;
+		
+		for(xCtr = 1; xCtr <= frameCnt; xCtr++ ){
+
+			picture = xmlDoc.evaluate('/animation/frames/frame_' + xCtr + '/picture', xmlDoc, null, 2, null);
+			pause = xmlDoc.evaluate('/animation/frames/frame_' + xCtr + '/pause', xmlDoc, null, 2, null);
+			
+			document.getElementById('outScreen').value = picture.stringValue.trim();
+			document.getElementById('frameMicroseconds').value = pause.stringValue.trim();
+			
+			copyToFrame('New');
+			
+		}
+	}
+	/******************************************************************************************
+	*
+	*
+	*/
+	function exportXML(){
+		var frameCnt = document.getElementById('FrameCounter').value;
+		var frameMicroSec = document.getElementById('frameMicroseconds').value;
+		
+		var xmlString = `<?xml version="1.0" encoding="UTF-8"?>
+<animation>
+	<frameCounter>` + frameCnt + `</frameCounter>
+	<frames>
+	`;
+		
+		for(xCtr = 1; xCtr <= frameCnt; xCtr++ ){
+			xmlString += `	<frame_` + xCtr + `> <!-- This block will repeat for each frame -->
+			<picture> <!-- This is each pixel $00_00_00_00, ... -->
+				<![CDATA[ `+ document.getElementById('Frame_' + xCtr).value + `
+				]]>
+			</picture>
+			<pause>`+ frameMicroSec + `</pause> <!-- microseconds -->
+		</frame_` + xCtr + `>
+	`;
+			
+		}
+		xmlString += `</frames>
+</animation>
+`;
+		document.getElementById('xmlstream').value = xmlString;
+	}
+	/******************************************************************************************
+	*
+	*
+	*/
+	var Key = {
+			LEFT:   37,
+			RIGHT:  39
+		//	UP:     38,
+		//	DOWN:   40
+		};
+
+		/**
+		* old IE: attachEvent
+		* Firefox, Chrome, or modern browsers: addEventListener
+		*/
+		function _addEventListener(evt, element, fn) {
+			if (window.addEventListener) {
+				element.addEventListener(evt, fn, false);
+			}
+			else {
+				element.attachEvent('on'+evt, fn);
+			}
+		}
+
+		function handleKeyboardEvent(evt) {
+			if (!evt) {evt = window.event;} // for old IE compatible
+			var keycode = evt.keyCode || evt.which; // also for cross-browser compatible
+
+			var info = document.getElementById("info");
+			switch (keycode) {
+				case Key.LEFT:
+					movethoroughFames('back');
+					break;
+//				case Key.UP:
+//					info.value += "UP ";
+//					break;
+				case Key.RIGHT:
+					movethoroughFames('forward');
+					break;
+//				case Key.DOWN:
+//					info.value += "DOWN ";
+//					break;
+				default:
+//					info.value += "SOMEKEY ";
+			}
+		}
+
+_addEventListener('keydown', document, handleKeyboardEvent);
+	/******************************************************************************************
+	*
+	*
+	*/
+	/******************************************************************************************
+	*
+	*
+	*/
+	/******************************************************************************************
+	*
+	*
+	*/
