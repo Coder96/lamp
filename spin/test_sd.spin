@@ -4,13 +4,13 @@ con { timing }
   _xinfreq = 5_000_000                                          ' use 5MHz crystal
 
   CLK_FREQ = (_clkmode >> 6) * _xinfreq                         ' system freq as a constant
-  MS_001   = CLK_FREQ / 1_000                                   ' ticks in 1ms
+{  MS_001   = CLK_FREQ / 1_000                                   ' ticks in 1ms
   US_001   = CLK_FREQ / 1_000_000                               ' ticks in 1us
 
-  sdDOpin   = 0     ' Data Out Pin
-  sdCKpin   = 1     ' Clock Pin
-  sdDIpin   = 2     ' Data in Pin
-  sdCSpin   = 3     ' Chip Select Pin
+  sdDOpin   = 1     ' Data Out Pin
+  sdCKpin   = 2     ' Clock Pin
+  sdDIpin   = 3     ' Data in Pin
+  sdCSpin   = 4     ' Chip Select Pin
 
   sdWPpin   = -1    ' Write Protect Pin -1 if unused.
   sdCDpin   = -1    ' Card Detect Pin   -1 if unused.
@@ -32,17 +32,52 @@ obj
   
 dat
 
-  long  tl1   $10_10_10_10
+  tl1   long  $FF_FF_FF_00
+  tl2   long  $FF_FF_FF_00, $FF_FF_FF_00
 
-
+}
 pub main 
 
-  sd.fatEngineStart( sdDOpin, sdCKpin, sdDIpin, sdCSpin, sdWPpin, sdCDpin, -1, -1, -1)
+	outa[16] := 1
+	dira[16] := 1
+	outa[17] := 1
+	dira[17] := 1
+	outa[18] := 1
+	dira[18] := 1
+	outa[19] := 1
+	dira[19] := 1
+	outa[20] := 1
+	dira[20] := 1
+	outa[21] := 1
+	dira[21] := 1
+	outa[22] := 1
+	dira[22] := 1
+	outa[23] := 1
+	dira[23] := 1
 
-  sd.writeLong(tl1)
+{  sd.fatEngineStart( sdDOpin, sdCKpin, sdDIpin, sdCSpin, sdWPpin, sdCDpin, -1, -1, -1)
 
-  blinkStatusLed(times)
+	outa[17] := 1
 
+	sd.openFile(string("test1.txt"), "W")
+
+	outa[18] := 1
+
+	sd.writeLong(tl1)
+
+  blinkStatusLed(2)
+
+	sd.closeFile
+	
+	sd.openFile(string("test2.txt"), "W")
+
+  sd.writeLong(tl2[0])
+	sd.writeLong(tl2[1])
+	
+  blinkStatusLed(2)
+
+  sd.closeFile
+  
 pub blinkStatusLed(times)
 
   repeat times
@@ -50,3 +85,6 @@ pub blinkStatusLed(times)
     time.pause(1000)
     outa[sdLEDpin] := 0
     time.pause(1000)
+    
+    }
+    
