@@ -333,6 +333,7 @@
 		var xmlDoc = parser.parseFromString(document.getElementById('xmlstream').value, "text/xml");
 		
 		var frameCnt = xmlDoc.getElementsByTagName("frameCounter")[0].childNodes[0].nodeValue;
+		document.getElementById('description').value = xmlDoc.getElementsByTagName("description")[0].childNodes[0].nodeValue;
 		
 		for(xCtr = 1; xCtr <= frameCnt; xCtr++ ){
 
@@ -353,10 +354,12 @@
 	function exportXML(){
 		var frameCnt = document.getElementById('FrameCounter').value;
 		var frameMicroSec = document.getElementById('frameMicroseconds').value;
+		var descpt = document.getElementById('description').value;
 		
 		var xmlString = `<?xml version="1.0" encoding="UTF-8"?>
 <animation>
-	<frameCounter>` + frameCnt + `</frameCounter>
+  <description>` + descpt + `</description>
+  <frameCounter>` + frameCnt + `</frameCounter>
 	<frames>
 	`;
 		

@@ -187,6 +187,8 @@
 						</tr>
 						<tr>
 							<td COLSPAN=2>
+								<LABEL>Description</LABEL>
+								<input id="description" value=""><br>
 								<LABEL>XML Stream</LABEL>
 								<input type="button" value="ImportXML &uarr;" onclick="importXML();">
 								<input type="button" value="ExportXML &darr;" onclick="exportXML();">

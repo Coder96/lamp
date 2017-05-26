@@ -1,4 +1,4 @@
- /*
+/* 
 for(var i = 0; i < 300; i++) {
 		
 		var input = document.createElement('INPUT')

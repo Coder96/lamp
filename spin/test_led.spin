@@ -9,6 +9,7 @@ PUB main
   High(20)
   High(21)
   
+  repeat
   
 PUB High(pin)
   outa[pin] := 1
