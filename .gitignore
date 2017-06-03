@@ -4,3 +4,4 @@ public/tmp/
 *.BIN
 *.binary
 *.side
+*.xml
