@@ -15,18 +15,18 @@
 * 090909 - 
 */
 	$controlCodes = array(
-		'recordDelimiter' => '010101',
-		'fieldDelimiter'	=> '020202',
-		'3' => '030303',
-		'4' => '040404',
-		'5' => '050505',
-		'6' => '060606',
-		'7' => '070707',
-		'8' => '080808',
-		'9' => '090909'
+		'recordDelimiter' => '01010101',
+		'fieldDelimiter'	=> '02020202',
+		'3' => '03030303',
+		'4' => '04040404',
+		'5' => '05050505',
+		'6' => '06060606',
+		'7' => '07070707',
+		'8' => '08080808',
+		'9' => '09090909'
 	);
 
-	$xml = simplexml_load_file("testan.xml");
+	$xml = simplexml_load_file("TEST4.xml");
 	if ($xml === false) {
 		echo "Failed loading XML: ";
 		foreach(libxml_get_errors() as $error) {

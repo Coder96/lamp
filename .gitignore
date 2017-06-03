@@ -1,2 +1,6 @@
 spin/tmp/
-.bin
+public/tmp/
+*.bin
+*.BIN
+*.binary
+*.side

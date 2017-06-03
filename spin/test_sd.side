@@ -1,4 +1,0 @@
-test_sd.spin
-SD-MMC_FATEngine.spin
-jm_time_80.spin
->compiler=SPIN

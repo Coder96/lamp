@@ -1,4 +1,4 @@
-/* 
+
 for(var i = 0; i < 300; i++) {
 		
 		var input = document.createElement('INPUT')
@@ -21,7 +21,7 @@ for(var i = 0; i < 300; i++) {
 		document.getElementById('color2_' + i).style.border = '0'
 					
 	}
-*/
+
 	var input2 = document.createElement('INPUT')
 	input2.setAttribute('id', 'color2_801')
 	input2.setAttribute('TYPE', 'button')

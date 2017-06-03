@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<animation>
+  <description>TEST4</description>
+  <frameCounter>4</frameCounter>
+	<frames>
+		<frame_1> <!-- This block will repeat for each frame -->
+			<picture> <!-- This is each pixel $00_00_00_00, ... -->
+				<![CDATA[ $00_ff_38_00, $00_00_00_00, $00_00_00_00, $00_00_00_00
+				]]>
+			</picture>
+			<pause>2000</pause> <!-- microseconds -->
+		</frame_1>
+		<frame_2> <!-- This block will repeat for each frame -->
+			<picture> <!-- This is each pixel $00_00_00_00, ... -->
+				<![CDATA[ $00_00_00_00, $00_ff_38_00, $00_00_00_00, $00_00_00_00
+				]]>
+			</picture>
+			<pause>2000</pause> <!-- microseconds -->
+		</frame_2>
+		<frame_3> <!-- This block will repeat for each frame -->
+			<picture> <!-- This is each pixel $00_00_00_00, ... -->
+				<![CDATA[ $00_00_00_00, $00_00_00_00, $00_ff_38_00, $00_00_00_00
+				]]>
+			</picture>
+			<pause>1000</pause> <!-- microseconds -->
+		</frame_3>
+		<frame_4> <!-- This block will repeat for each frame -->
+			<picture> <!-- This is each pixel $00_00_00_00, ... -->
+				<![CDATA[ $00_00_00_00, $00_00_00_00, $00_00_00_00, $00_ff_38_00,
+				]]>
+			</picture>
+			<pause>2000</pause> <!-- microseconds -->
+		</frame_4>
+	</frames>
+</animation>
