@@ -26,7 +26,10 @@
 		'9' => '09090909'
 	);
 
-	$xml = simplexml_load_file("TEST4.xml");
+	$fileToload = $argv[1] ;
+	
+	
+	$xml = simplexml_load_file($fileToload);
 	if ($xml === false) {
 		echo "Failed loading XML: ";
 		foreach(libxml_get_errors() as $error) {
@@ -89,5 +92,10 @@
 	*/
 	function writeToFile($fileName, $hexString){
 		$hex = hex2bin($hexString);
-		file_put_contents("$fileName.bin", $hex);
+		file_put_contents("tmp/$fileName.hex", $hex);
 	}
+	
+	
+	
+	
+	
