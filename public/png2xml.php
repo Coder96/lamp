@@ -1,11 +1,22 @@
+#!/usr/bin/php
+
 <?php
 
 
 	$matrix = array();
 
-	$im = new Imagick("tmp/core_gradientpng.png");
+	$fileToload = $argv[1] ;
+	
+	if(empty($fileToload)){
+		echo("Pass in file name\n");
+		exit();
+	} else {
+		//$im = new Imagick("tmp/core_gradientpng.png");
+		$im = new Imagick($fileToload);
+	}
 	$it = $im->getPixelIterator();
 
+	
 	$diasplayHeigth = 18;
 	$displayWidth = 16;
 	
@@ -43,24 +54,52 @@
     $it->syncIterator();
 	}
 	$picTable = $picTable . '</tr></table>';
-	echo $picTable;
+//	echo $picTable;
 	
-	echo('<pre><code>');
+//	echo('<pre><code>');
 //	var_dump($matrix[0]);
-	var_dump(sizeof($matrix));
+//	var_dump(sizeof($matrix));
 	$frameCounter = 0;
+	$xmlString = '';
+	$xmlString2 = '';
 	$screenString = '';
 	for($frameCounter = 0; $frameCounter <= (sizeof($matrix)-$diasplayHeigth); $frameCounter++){
-		for($w = 0; $w <= ($displayWidth-1); $w++){							//	Total of 16 times. Width of display.
+		for($w = 0; $w <= ($displayWidth-1); $w++){																				//	Total of 16 times. Width of display.
 			for($h = $frameCounter; $h <= ($diasplayHeigth-1+$frameCounter); $h++){					//	Total of 18 times. Heigth of display.
 //				$screenString = $screenString . " $h:$w ". $matrix[$h][$w] . ', ';
 				$screenString = $screenString . $matrix[$h][$w] . ', ';
 			}
 		}
 		$screenString = substr($screenString, 0, -2);	
-		echo("$frameCounter:$screenString<br>");
+		$xmlString2 = $xmlString2 . '	<frame_' . ($frameCounter + 1) . '> <!-- This block will repeat for each frame -->
+			<picture> <!-- This is each pixel $00_00_00_00, ... -->
+				<![CDATA[ '. $screenString . '
+				]]>
+			</picture>
+			<pause>1000</pause> <!-- microseconds -->
+		</frame_' . ($frameCounter + 1) . '>
+	';
+//		echo("$frameCounter:$screenString<br>");
+		
 		$screenString = '';
-	}
+		}
+		
+		
+		$xmlString = '<?xml version="1.0" encoding="UTF-8"?>
+<animation>
+  <description>Put file name here</description>
+  <frameCounter>' . $frameCounter . '</frameCounter>
+	<frames>
+	 '. $xmlString2 . '
+	</frames>
+</animation>';
+	
+//	echo $xmlString;	
+	
+	$filename = 'tmp/'. basename($fileToload, ".png") .'.xml';
+	
+ file_put_contents($filename, $xmlString);
+	
 /*
 $filename = "/home/webedit/core_gradientpng.png";
 $handle = fopen($filename, "rb");

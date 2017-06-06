@@ -33,7 +33,7 @@
 	if ($xml === false) {
 		echo "Failed loading XML: ";
 		foreach(libxml_get_errors() as $error) {
-			echo "<br>", $error->message;
+			echo "\n", $error->message;
 		}
 	} else {
 		$hexBigSring = '';
@@ -47,7 +47,8 @@
 				$hexPasString . 
 				$controlCodes['recordDelimiter'];
 		}
-		writeToFile($Description, $hexBigSring);
+		
+		writeToFile($fileToload, $hexBigSring);
 	}
 	/******************************************************************************************
 	*
@@ -92,6 +93,7 @@
 	*/
 	function writeToFile($fileName, $hexString){
 		$hex = hex2bin($hexString);
+		$filename = basename($fileName, ".xml");
 		file_put_contents("tmp/$fileName.hex", $hex);
 	}
 	
