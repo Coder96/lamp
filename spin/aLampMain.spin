@@ -26,8 +26,8 @@ con { io pins RGBW strip }
 con { io pins serial interface }
 
   Baudrate = 9600
-  RXpin  = 25       ' programming / terminal
-  TXpin  = 24
+  RXpin  = 31       ' programming / terminal
+  TXpin  = 30
 
   SDA  = 29         ' eeprom / i2c
   SCL  = 28
@@ -35,7 +35,7 @@ con { io pins serial interface }
 con {  }
   systemStatusPin = 15
   systemErrorPin  = 16
-  rgbwStripLength = 288
+  rgbwStripLength = 5 '288
   
   
 obj
@@ -44,20 +44,30 @@ obj
   time  : "jm_time_80.spin"             ' timing and delays
   rgbw  : "jm_rgbx_pixel"               ' unified pixel driver
   pst   : "Parallax Serial Terminal"    ' Serial Terminal
+  str   : "STRINGS2"                    ' String lib
 
 dat
-    anRecordDelimiter long  $01_01_01_01
-    anFieldDelimiter  long  $02_02_02_02
+    frameRecordDelimiter long  $01_01_01_01
+    frameFieldDelimiter  long  $02_02_02_02
 
 var
 
-  long  frameBuff1[rgbStripLength]      ' Buffer pointer for RGB Strip
-  long  frameBuff2[rgbStripLength]      ' Buffer for RGB Strip
+  long  frameBuff1[rgbwStripLength]      ' Buffer pointer for RGB Strip
+  long  frameBuff2[rgbwStripLength]      ' Buffer for RGB Strip
   long  framePauseTimer                 ' Pause time between frames
-
+  
+  byte  frameFileName[13]                 '
 
 pub main
   start             ' Misc Init Process
+  
+'  readStartFile
+'  OpenFile(string("test4123.hex"))
+'  frameRead
+'  closeFile
+  
+  longfill(@frameBuff1, $20_20_00_00, rgbwStripLength)
+  repeat
   
 '****************************************************************
 '
@@ -102,7 +112,7 @@ pub start | errorNumber, errorString
  
   pst.Str(String("Initializing RGBW Strip System"))
   pst.Chars(pst#NL, 2)
-  strip.RGBWs(@frameBuff1, rgbStripLength, rgbWpin, 1_0, 32)
+  rgbw.start_6812x(@frameBuff1, rgbwStripLength, rgbWpin, 1_0, 32)
   pst.Str(String("RGBW Strip System Initialized"))
   pst.Chars(pst#NL, 2)
   
@@ -110,12 +120,12 @@ pub start | errorNumber, errorString
  '
  '
  '
-pub frameOpenFile(fileName)
+pub OpenFile(fileName) | errorString, errorNumber
   
   pst.Str(String("Opening File: "))
-  pst.Str(String(fileName))
+  pst.Str(fileName)
   pst.Chars(pst#NL, 2)
-  errorString := \sd.openFile(String(fileName), "R")
+  errorString := \sd.openFile(fileName, "R")
   errorNumber := sd.partitionError
   if(errorNumber) 
     pst.Str(String("Error Opening File"))
@@ -129,7 +139,7 @@ pub frameOpenFile(fileName)
 '
 '
 '
-pub frameCloseFile
+pub closeFile
 
   pst.Str(String("Closeing File. "))
   pst.Chars(pst#NL, 2)
@@ -140,13 +150,13 @@ pub frameCloseFile
 '
 '
 ' 
-pub frameRead | tLong
+pub frameRead | tLong, indexPixel
   
   pst.Str(String("Reading Pixel Data"))
   pst.Chars(pst#NL, 2) 
-  repeat indexPixel 1 to rgbwStripLength 
+  repeat indexPixel from 1 to rgbwStripLength 
     tLong := sd.readLong
-    if(tLong == fieldDelimiter)     ' Pixel Data Done
+    if(tLong == frameFieldDelimiter)     ' Pixel Data Done
       quit                          ' Move on to next section
     else
       frameBuff2[indexPixel] := tLong
@@ -166,7 +176,7 @@ pub frameRead | tLong
 
   tLong := sd.readLong
   
-  if(tLong == anRecordDelimiter)
+  if(tLong == frameRecordDelimiter)
     pst.Str(String("Recrod Delimiter Found"))
     pst.Chars(pst#NL, 2)
   else
@@ -180,6 +190,8 @@ pub frameRead | tLong
     pst.Str(String("Offending DEC: "))
     pst.dec(tLong) 
     pst.Chars(pst#NL, 2)
+    
+    longmove(@frameBuff2, @frameBuff1, 4)
     
 '****************************************************************
 '
@@ -233,3 +245,29 @@ pub sdLEDpinOn
 pub sdLEDpinOff
   outa[sdLEDpin] := 1
   dira[sdLEDpin] := 0
+'****************************************************************
+'
+'
+'
+pub readStartFile
+  openFile(string("startup.txt"))
+  sd.readString(@frameFileName, 13)
+  pst.Str(string("File to start with: "))
+  pst.Char(frameFileName)
+'  pst.Char(frameFileName[1])
+'  pst.Char(frameFileName[2])
+'  pst.Char(frameFileName[3])
+'  pst.Char(frameFileName[4])
+'  pst.Char(frameFileName[5])
+'  pst.Char(frameFileName[6])
+'  pst.Char(frameFileName[7])
+'  pst.Char(frameFileName[8])
+'  pst.Char(frameFileName[9])
+'  pst.Char(frameFileName[10])
+'  pst.Char(frameFileName[11])
+'  pst.Char(frameFileName[12])
+'  pst.Char(frameFileName[13])
+
+  pst.Chars(pst#NL, 2)
+
+  closeFile
