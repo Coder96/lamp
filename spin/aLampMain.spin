@@ -35,8 +35,8 @@ con { io pins serial interface }
 con {  }
   systemStatusPin = 15
   systemErrorPin  = 16
-  rgbwStripLength = 5 '288
-  
+  rgbwStripLength = 5
+'  rgbwStripLength = 288
   
 obj
 
@@ -57,16 +57,19 @@ var
   long  framePauseTimer                 ' Pause time between frames
   
   byte  frameFileName[13]                 '
-
+'****************************************************************
+'
+'
+'
 pub main
   start             ' Misc Init Process
   
-'  readStartFile
-'  OpenFile(string("test4123.hex"))
-'  frameRead
+  readStartFile
+  OpenFile(@frameFileName)
+  frameRead
 '  closeFile
   
-  longfill(@frameBuff1, $20_20_00_00, rgbwStripLength)
+  'longfill(@frameBuff1, $20_20_00_00, rgbwStripLength)
   repeat
   
 '****************************************************************
@@ -160,14 +163,23 @@ pub frameRead | tLong, indexPixel
       quit                          ' Move on to next section
     else
       frameBuff2[indexPixel] := tLong
-
+       pst.Hex(tLong, 8)
+       pst.Chars(pst#NL, 2) 
+       
+  pst.Str(String("fb:"))
+  pst.Hex(@frameBuff2, 8)
+  pst.Chars(pst#NL, 2) 
   pst.Str(String("Done reading Pixel Data"))
   pst.Chars(pst#NL, 2) 
-
 
   pst.Str(String("Reading Pasue Time"))
   pst.Chars(pst#NL, 2) 
   framePauseTimer := sd.readLong
+  pst.Str(String("Pasue Time:"))
+  pst.Dec(framePauseTimer)
+  pst.Str(String(":"))
+  pst.Hex(framePauseTimer, 8)
+  pst.Chars(pst#NL, 2)  
   pst.Str(String("Done Reading Pasue Time"))
   pst.Chars(pst#NL, 2) 
     
@@ -249,11 +261,13 @@ pub sdLEDpinOff
 '
 '
 '
-pub readStartFile
+pub readStartFile 
   openFile(string("startup.txt"))
   sd.readString(@frameFileName, 13)
   pst.Str(string("File to start with: "))
-  pst.Char(frameFileName)
+  pst.Str(@frameFileName)
+  
+'  pst.Char(frameFileName[0])
 '  pst.Char(frameFileName[1])
 '  pst.Char(frameFileName[2])
 '  pst.Char(frameFileName[3])
@@ -266,7 +280,7 @@ pub readStartFile
 '  pst.Char(frameFileName[10])
 '  pst.Char(frameFileName[11])
 '  pst.Char(frameFileName[12])
-'  pst.Char(frameFileName[13])
+  'pst.Char(frameFileName[13])
 
   pst.Chars(pst#NL, 2)
 
