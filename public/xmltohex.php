@@ -93,7 +93,7 @@
 	*/
 	function writeToFile($fileName, $hexString){
 		$hex = hex2bin($hexString);
-		$filename = basename($fileName, ".xml");
+		$fileName = basename($fileName, ".xml");
 		file_put_contents("tmp/$fileName.hex", $hex);
 	}
 	

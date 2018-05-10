@@ -7,3 +7,6 @@ public/tmp/
 *.xml
 *.hex
 *.directory
+*.stl
+*.kate-swp
+

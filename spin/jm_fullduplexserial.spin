@@ -2,12 +2,12 @@
 ''
 ''   File....... jm_fullduplexserial.spin
 ''   Purpose.... Buffered serial communications
-''   Authors.... Chip Gracey, Jeff Martin, Daniel Harris 
+''   Authors.... Chip Gracey, Jeff Martin, Daniel Harris
 ''               -- reformatted and minor updates to PASM code by Jon McPhalen
 ''               -- see below for terms of use
 ''   E-mail.....  
 ''   Started.... 
-''   Updated.... 07 OCT 2014
+''   Updated.... 18 APR 2017
 ''
 '' =================================================================================================
 
@@ -38,7 +38,7 @@
 
 }}
 
-
+ 
 con { fixed io pins }
 
   RX1 = 31                                                      ' programming / terminal
@@ -203,6 +203,14 @@ pub tx(txbyte)
                                                                  
   if (rxtxmode & %1000)                                         ' if half-duplex on same pin
     rx                                                          '  pull tx'd byte from rx buffer
+
+
+pub txn(txbyte, n)
+
+'' Send byte n times
+
+  repeat n
+    tx(txbyte)
                                                                   
 
 pub str(p_zstr)
