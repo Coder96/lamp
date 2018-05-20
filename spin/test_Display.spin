@@ -13,8 +13,8 @@ CON
   Chip_Num          = 2
 
   Baudrate  = 9600
-  RXpin     = 31    ' programming / terminal
-  TXpin     = 30
+  RXpin     = 24    ' programming / terminal
+  TXpin     = 25
   
 OBJ
 
@@ -25,22 +25,28 @@ OBJ
 PUB Main | mystep
 
   term.start(RXpin, TXpin, %0000, Baudrate)
+  
   stepDisp.Start(Clock_Pin, Latch_Pin, Data_Pin, Chip_Num)
   waitcnt(clkfreq*2+cnt)
   
  repeat
+    myTermStrNL(string("Send 00"))
     stepDisp.Out(sdZero, 0)
     stepDisp.Out(sdZero, 1)
     waitcnt(clkfreq*2+cnt)
+    myTermStrNL(string("Send 22"))
     stepDisp.Out(sdTwo, 0)
     stepDisp.Out(sdTwo, 1)
     waitcnt(clkfreq*2+cnt)
+    myTermStrNL(string("Send 44"))
     stepDisp.Out(sdFour, 0)
     stepDisp.Out(sdFour, 1)
     waitcnt(clkfreq*2+cnt)
+    myTermStrNL(string("Send 66"))
     stepDisp.Out(sdSix, 0)
     stepDisp.Out(sdSix, 1)
     waitcnt(clkfreq*2+cnt)
+    myTermStrNL(string("Send 88"))
     stepDisp.Out(sdEight, 0)
     stepDisp.Out(sdEight, 1)
     waitcnt(clkfreq*2+cnt)
@@ -303,3 +309,15 @@ PUB Seven_Segment_Test | value
     else
       Data.Out(Ten, 0)                                                         
 }}
+
+pub myTermStrNL(iString)
+
+  term.str(iString)
+  term.tx(13)
+  term.tx(10)
+  
+pub myTermDecNL(iDec)
+
+  term.dec(iDec)
+  term.tx(13)
+  term.tx(10)

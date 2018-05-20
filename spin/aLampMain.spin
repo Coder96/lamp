@@ -18,7 +18,7 @@ con { timing }
 '  sdWPpin   = 5    ' Write Protect Pin -1 if unused.
 '  sdCDpin   = 6    ' Card Detect Pin   -1 if unused.
 
-  sdLEDpin  = 15 '14     ' Status LED pin number.
+  sdLEDpin  = 26 '14     ' Status LED pin number.
 
 '------ stepDisp Shift Register Pins------
   sdiLHpin  = 21 '22     ' Latch Pin
@@ -39,7 +39,7 @@ con { timing }
   SCL       = 28
 
 
-  systemErrorPin  = 16
+  systemErrorPin  = 27
 
   rgbWpin = 20     ' Data Ping for RGBW strip
  ' rgbwStripLength = 7
@@ -108,21 +108,24 @@ pub main
   endOfFrameFile := false
   
   if (read_configuration)
-    term.str(string("Filename... "))
-    term.str(@framefile)
-    term.tx(13)
-    term.tx(10)
-  
-    OpenFile(@framefile,"r")
-  
-  repeat 
-    frameRead
-    framePause
-  
-'  closeFile
 
-  repeat
-    waitcnt(0)
+    term.str(string("Frame File:"))
+    myTermStrNL(@framefile)
+      
+    if(OpenFile(@framefile,"r"))
+  
+      repeat 
+        frameRead
+       ' ifnot(endOfFrameFile)
+        framePause
+        'else
+          'closeFile
+        
+
+    
+      repeat
+        waitcnt(0)
+     
 
 var                                                              
                                                                  
@@ -149,107 +152,71 @@ pub start | errorNumber, errorString, startStep
   stepDisp.Out(sdiTwo, 0)
   stepDisp.Out(sdiAllOff, 1)
   
-  term.str(string("IO Cleared "))  
-  term.tx(13)
-  term.tx(10)
+  myTermStrNL(string("IO Cleared "))  
   
-  term.Str(String("Step Display Initialized"))
-  term.tx(13)
-   term.tx(10)
+  myTermStrNL(String("Step Display Initialized"))
   
-  term.Str(String("Terminal Initialized"))
-  term.tx(13)
-  term.tx(10)
+  myTermStrNL(String("Terminal Initialized"))
   
-  term.Str(String("InitializingTimer System"))
-  term.tx(13)
-  term.tx(10)
+  myTermStrNL(string("InitializingTimer System"))
   time.start
   stepDisp.Out(sdiThree, 0)
   stepDisp.Out(sdiAllOff, 1)
 
-  term.Str(String("Timer System Initialized"))
-  term.tx(13)
-  term.tx(10)
+  myTermStrNL(String("Timer System Initialized"))
   
   parser.start(@CHAR_SET, @TOKEN_LIST, TOKEN_COUNT, false)      ' setup parsing engine         
   stepDisp.Out(sdiFour, 0)
   stepDisp.Out(sdiAllOff, 1)
 
-  term.str(string("Parser System Started"))  
-  term.tx(13) 
-  term.tx(10)
+  myTermStrNL(string("Parser System Started"))  
   stepDisp.Out(sdiFive, 0)
   stepDisp.Out(sdiAllOff, 1)
   
-  term.Str(String("Initializing SD Card System"))
-  term.tx(13)
-  term.tx(10)
+  myTermStrNL(String("Initializing SD Card System"))
   
   errorNumber := \sd.mount_explicit(sdDOpin, sdCKpin, sdDIpin, sdCSpin)
   
   sdMounted := (errorNumber == 0)   
   
   if(sdMounted) ' If we have an error spit out error and turn on error light. Might end also?
-    term.Str(String("SD Card Mounted"))
-    term.tx(13)
-    term.tx(10)
+    myTermStrNL(String("SD Card Mounted"))
   else
     io.high(systemErrorPin)
-    term.Str(String("SD Card NOT Mounted"))  
-    term.tx(13)
-    term.tx(10)
+    myTermStrNL(String("SD Card NOT Mounted"))  
     stepDisp.Out(sdiOne, 0)
     stepDisp.Out(sdiSix, 1)
-    term.Str(String("SD Card Partition Mount Error: "))  
-    term.dec(errorNumber)
-    term.tx(13)
-     term.tx(10)
+    term.str(String("SD Card Partition Mount Error: "))  
+    myTermDecNL(errorNumber)
     if(errorNumber == -20)
-      term.Str(String("Not a fat16 or fat32 volume"))
+      myTermStrNL(String("Not a fat16 or fat32 volume"))
     elseif(errorNumber == -21)
-      term.Str(String("Bad bytes per sector"))
+      myTermStrNL(String("Bad bytes per sector"))
     elseif(errorNumber == -22)
-      term.Str(String("Bad sectors per cluster"))
+      myTermStrNL(String("Bad sectors per cluster"))
     elseif(errorNumber == -23)
-      term.Str(String("Not two FATs"))
+      myTermStrNL(String("Not two FATs"))
     elseif(errorNumber == -24)
-      term.Str(String("Bad FAT signature"))
+      myTermStrNL(String("Bad FAT signature"))
     
-    term.tx(13)  
-    term.tx(10)
-    term.Str(String("***"))
-    term.tx(13)  
-    term.tx(10)
-    term.Str(String("If you thinks the card is still good.")) 
-    term.tx(13)
-    term.tx(10)  
-    term.Str(String("Get the files off and format to fat32."))
-    term.tx(13)
-    term.tx(10)
-    term.Str(String("***"))
-    term.tx(13)
-    term.tx(10)  
+    myTermStrNL(String("***"))
+    myTermStrNL(String("If you thinks the card is still good.")) 
+    myTermStrNL(String("Get the files off and format to fat32."))
+    myTermStrNL(String("***"))
     
     repeat                                                         
       waitcnt(0)
   
-  term.Str(String("SD Card System Initialized"))
-  term.tx(13)
-  term.tx(10)
+  myTermStrNL(String("SD Card System Initialized"))
   stepDisp.Out(sdiSix, 0)
   stepDisp.Out(sdiAllOff, 1)
 
-  term.Str(String("Initializing RGBW Strip System"))
-  term.tx(13)
-  term.tx(10)
+  myTermStrNL(String("Initializing RGBW Strip System"))
   rgbw.start_6812x(@frameBuff1, rgbwStripLength, rgbWpin, 1_0, 32)
   stepDisp.Out(sdiSeven, 0)
   stepDisp.Out(sdiAllOff, 1)
 
-  term.Str(String("RGBW Strip System Initialized"))
-  term.tx(13)
-  term.tx(10)
+  myTermStrNL(String("RGBW Strip System Initialized"))
   
 '****************************************************************
 '
@@ -260,36 +227,30 @@ pub start | errorNumber, errorString, startStep
 '' -- mode is [lower-case] single character, (e.g., "r" for read)
 '' -- sd card must be mounted before open
 '
-pub OpenFile(p_str, mode) | errorNumber
+pub OpenFile(p_str, mode) : r | errorNumber
   
   term.Str(String("Opening File: "))
-  term.Str(p_str)
-  term.tx(13)
-  term.tx(10)
+  myTermStrNL(p_str)
     
   if (sdMounted)                                                   
     errorNumber := \sd.popen(p_str, mode)                             ' attempt to open
     if (errorNumber == 0)                                              
-      term.Str(String("File Opened"))
-      term.tx(13)
-      term.tx(10)
+      myTermStrNL(String("File Opened"))
       if (mode == "r")                                           
         \sd.seek(0)                                             ' force sector read 
       return true                                                
     else
-      term.Str(String("File Not Opened"))
-      term.tx(13)
-      term.tx(10)
+      myTermStrNL(String("File Not Opened"))
       stepDisp.Out(sdiOne, 0)
       stepDisp.Out(sdiFour, 1)                                             
       return false
   else
-    term.Str(String("Not mounted. How are you here?"))
-    term.tx(13)
-    term.tx(10)
+    myTermStrNL(String("Not mounted. How are you here?"))
     stepDisp.Out(sdiOne, 0)
     stepDisp.Out(sdiSix, 1)
     return false
+    
+  return true
     
 '****************************************************************
 '
@@ -297,18 +258,91 @@ pub OpenFile(p_str, mode) | errorNumber
 '
 pub closeFile
 
-  term.Str(String("Closeing File. "))
-  term.tx(13)
-  term.tx(10)
+  myTermStrNL(String("Closeing File. "))
   \sd.pclose
-  term.Str(String("File Closed. "))
-  term.tx(13)
-  term.tx(10)
+  myTermStrNL(String("File Closed. "))
 '****************************************************************
 '
 '
-' 
-pub frameRead : r | tLong, indexPixel
+'
+pub frameRead : r | tLong, ctrPixel, curItem
+
+
+' 1  Pixel Data
+' 10 Pause Time
+' 90 End of Frame or End of File
+
+  curItem := 1
+  ctrPixel := 0
+  framePauseTimer := 0
+  
+  stepDisp.Out(sdiTwo, 0)
+  stepDisp.Out(sdiZero, 1)
+  
+  myTermStrNL(String("************************* Start New frame"))
+  myTermStrNL(String("Reading Frame Data"))
+  
+  repeat
+    tLong := \frameReadLong
+    if(curItem > 1)
+      term.Hex(tLong, 8)
+      myTermStrNL(String(" "))
+    
+    if(tLong == frameFieldDelimiter)
+      myTermStrNL(String("Found Field Delimiter"))
+      if(curItem == 1)        ' Expecting Last Section to be Pixel Data
+        framePauseTimer := \frameReadLong
+        mytermStrNL(String("Reading Pause Time"))
+        term.Str(String("Pause Time Dec:"))
+        term.Dec(framePauseTimer)
+        term.Str(String(" Hex:"))
+        term.Hex(framePauseTimer, 8)
+        mytermStrNL(String(" "))
+        curItem := 10
+    elseif(tLong == frameRecordDelimiter)
+      myTermStrNL(String("Found Record Delimiter"))
+      quit
+    elseif(endOfFrameFile)
+      myTermStrNL(String("End Of file"))
+      return 
+'      \sd.seek(0)
+'      endOfFrameFile := false
+    else
+      if(ctrPixel < rgbwStripLength)
+        frameBuff2[ctrPixel] := tLong
+        ctrPixel++
+  
+  myTermStrNL(String("Done Reading Frame Data"))
+
+  if(framePauseTimer == 0)
+    myTermStrNL(String("Pause Data Missing"))
+    myTermStrNL(String("Setting to 10 Seconds"))
+    framePauseTimer := 10000
+
+  if(framePauseTimer < 0)
+    myTermStrNL(String("Pause Data Less Than 0 Seconds"))
+    myTermStrNL(String("Setting to 10 Seconds"))
+    framePauseTimer := 10000
+
+  if(framePauseTimer > 100000)
+    myTermStrNL(String("Pause Data To Big"))
+    myTermStrNL(String("Setting to 10 Seconds"))
+    framePauseTimer := 10000
+
+  if(ctrPixel < rgbwStripLength)
+    myTermStrNL(String("Pixel Data Short"))
+    term.str(String("Strip Length:"))
+    myTermDecNL(ctrPixel)
+
+  longmove(@frameBuff1, @frameBuff2, rgbwStripLength)
+  myTermStrNL(String("Frame Sent"))
+    
+  stepDisp.Out(sdiTwo, 0)
+  stepDisp.Out(sdiNine, 1)
+  
+  return
+  
+pub frameRead2 : r | tLong, indexPixel
 
   stepDisp.Out(sdiTwo, 0)
   stepDisp.Out(sdiZero, 1)
@@ -438,19 +472,15 @@ pub frameReadLong | ctr, char1
 pub framePause
   term.Str(String("Lets Pasue for: "))
   term.Dec(framePauseTimer)
-  term.Str(String(" ms"))
-  term.tx(13)
-  term.tx(10)
+  myTermStrNL(String(" ms"))
   time.pause(framePauseTimer)
-  term.Str(String("Lets Move On"))
-  term.tx(13)
-  term.tx(10)
+  myTermStrNL(String("Done Pausing"))
   
 '****************************************************************
 '
 '
 '
-'pub frameNext
+
 '****************************************************************
 '
 '
@@ -520,14 +550,16 @@ dat
 
   CfgFile               byte    "STARTUP.TXT", 0
 
-
+'********************************************************************8
+'
+'
 pub read_configuration | check
 
   ifnot (has_file(@CfgFile))
-    term.str(string("Error: Cannot open STARTUP.TXT", 13))
+    myTermStrNL(string("Error: Cannot open STARTUP.TXT"))
     return false
 
-  term.str(string("Opened STARTUP.TXT", 13))
+  myTermStrNL(string("Opened STARTUP.TXT"))
   open_file(@CfgFile, "r")
 
   repeat
@@ -600,3 +632,14 @@ pub cmd_option | tc, idx, value
 
 
   
+pub myTermStrNL(iString)
+
+  term.str(iString)
+  term.tx(13)
+  term.tx(10)
+  
+pub myTermDecNL(iDec)
+
+  term.dec(iDec)
+  term.tx(13)
+  term.tx(10)
