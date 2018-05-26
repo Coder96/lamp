@@ -116,10 +116,14 @@ pub main
   
       repeat 
         frameRead
-       ' ifnot(endOfFrameFile)
-        framePause
-        'else
-          'closeFile
+        ifnot(endOfFrameFile)
+          framePause
+        else
+          'closeFile(@framefile)
+          'OpenFile(@framefile,"r")
+          sd.seek(0)
+          endOfFrameFile := false
+
         
 
     
@@ -256,9 +260,11 @@ pub OpenFile(p_str, mode) : r | errorNumber
 '
 '
 '
-pub closeFile
+pub closeFile(p_str)
 
-  myTermStrNL(String("Closeing File. "))
+  term.Str(String("Closeing File:"))
+  myTermStrNL(p_str)
+    
   \sd.pclose
   myTermStrNL(String("File Closed. "))
 '****************************************************************
@@ -305,7 +311,7 @@ pub frameRead : r | tLong, ctrPixel, curItem
     elseif(endOfFrameFile)
       myTermStrNL(String("End Of file"))
       return 
-'      \sd.seek(0)
+'      sd.seek(0)
 '      endOfFrameFile := false
     else
       if(ctrPixel < rgbwStripLength)
