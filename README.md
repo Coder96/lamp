@@ -43,6 +43,7 @@ Then  frameFieldDelimiter.
 Feild 2 is Pause time between frames  
 Then frameRecordDelimiter  
 
+
 ## STARTUP.TXT
 
 The system looks at this file to know what to do. File name must be upper case.
@@ -75,9 +76,9 @@ The files names need to conform to the dos file name convention.
 ## Utilities
 
 In the pbulic flder.
-	index.php	-	will give you an interface to create frames manualy. Also can edit the xml it generates. 
-	xmltohex.php	-	Will convert your xml files to hex. 
-	png2xml.php	-	Make a PNG 16 pixels wide. It will make a animation scollong up. Outputs XML. 
+	index.php	-	will give you an interface to create frames manualy. Also can edit the xml it generates.  
+	xmltohex.php	-	Will convert your xml files to hex.  
+	png2xml.php	-	Make a PNG 16 pixels wide. It will make a animation scrollong up. Outputs XML.  
 
 ## Future Plans
 
