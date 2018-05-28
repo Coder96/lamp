@@ -95,42 +95,94 @@ var
   byte  framefile[13]
   byte  option[3]
   byte  endOfFrameFile
+  byte  startUpType[10]
+  byte  repeatMode[2]
+  byte  turnoffatend[2]
+  
+con
+  framesfilesNum = 10
+var
+  byte  framesfiles[13*framesfilesNum]
+  byte  framesFilesSize[framesfilesNum]
   
 '****************************************************************
-'
-'
-'
-
-pub main
+pub main | index
   
-  start             ' Misc Init Process
+  repeatMode := string("Y")
+  
+  myTermStrNL(string("*********************** System Starting."))
+  start 'Init Process
   
   endOfFrameFile := false
   
   if (read_configuration)
-
-    term.str(string("Frame File:"))
-    myTermStrNL(@framefile)
-      
-    if(OpenFile(@framefile,"r"))
   
-      repeat 
-        frameRead
-        ifnot(endOfFrameFile)
-          framePause
-        else
-          'closeFile(@framefile)
-          'OpenFile(@framefile,"r")
-          sd.seek(0)
-          endOfFrameFile := false
-
-        
-
+    myTermStrNL(string("***Starting Config***"))
+    term.str(string("STARTUPTYPE  : "))
+    myTermStrNL(@startUpType)
+    term.str(string("REPEATMODE   : "))
+    myTermStrNL(@repeatMode)
+    term.str(string("TURNOFFATEND : "))
+    myTermStrNL(@turnoffatend)
     
-      repeat
-        waitcnt(0)
-     
+    if(strcomp(@startUpType, string("SINGLE")))
+      singleFileMode
+    if(strcomp(@startUpType, string("MULTI")))
+      multiFileMode
+      
+  myTermStrNL(string("*********************** System Stoping."))
+  
+  repeat
+    waitcnt(0)
+'*********************************************************************
+pub singleFileMode
 
+  myTermStrNL(string("Starting Single File Mode."))
+  term.str(string("Frame File :"))
+  myTermStrNL(@framefile)
+  term.str(string("Repeat File:"))
+  myTermStrNL(@repeatMode)
+  
+  if(OpenFile(@framefile,"r"))
+
+    repeat 
+      frameRead
+      ifnot(endOfFrameFile)
+        framePause
+      else
+        sd.seek(0)
+        endOfFrameFile := false
+        if(strcomp(@repeatMode, string("N")))
+          return
+'*********************************************************************       
+pub multiFileMode | x, index
+
+
+  myTermStrNL(string("Starting Multi File Mode."))
+  repeat 
+    repeat index from 0 to 9
+      myTermStrNL(string("***New File"))
+      term.str(string("File :"))
+      bytemove(@framefile, @framesfiles[index*13] ,12)
+      myTermStrNL(@framefile)
+      term.str(string("Index:"))
+      myTermDecNL(index)
+      
+      bytefill(@framefile, 0, 12)
+      bytemove(@framefile, @framesfiles[index*13] ,framesFilesSize[0])
+      if(\OpenFile(@framefile,"r"))
+        longfill(@frameBuff2, $00_00_00_00, rgbwStripLength)
+        longmove(@frameBuff1, @frameBuff2, rgbwStripLength)
+        x := 0
+        repeat until x == 1
+          frameRead
+            ifnot(endOfFrameFile)
+              framePause
+            else
+              closeFile(@framefile)
+              x := 1
+    ifnot(strcomp(@repeatMode, string("Y")))
+      return  
 var                                                              
                                                                  
   long  sdMounted                                                  
@@ -138,9 +190,6 @@ var
   byte  linebuf[80 + 1]       ' line buffer
 
 '****************************************************************
-'
-'
-'
 pub start | errorNumber, errorString, startStep
   
   startStep := 0
@@ -216,7 +265,9 @@ pub start | errorNumber, errorString, startStep
   stepDisp.Out(sdiAllOff, 1)
 
   myTermStrNL(String("Initializing RGBW Strip System"))
+  longfill(@frameBuff1, $00_00_00_00, rgbwStripLength)
   rgbw.start_6812x(@frameBuff1, rgbwStripLength, rgbWpin, 1_0, 32)
+  longfill(@frameBuff1, $00_00_00_00, rgbwStripLength)
   stepDisp.Out(sdiSeven, 0)
   stepDisp.Out(sdiAllOff, 1)
 
@@ -264,8 +315,8 @@ pub closeFile(p_str)
 
   term.Str(String("Closeing File:"))
   myTermStrNL(p_str)
-    
   \sd.pclose
+  endOfFrameFile := false
   myTermStrNL(String("File Closed. "))
 '****************************************************************
 '
@@ -291,6 +342,7 @@ pub frameRead : r | tLong, ctrPixel, curItem
   repeat
     tLong := \frameReadLong
     if(curItem > 1)
+      term.str(string("Next Item:"))
       term.Hex(tLong, 8)
       myTermStrNL(String(" "))
     
@@ -311,8 +363,6 @@ pub frameRead : r | tLong, ctrPixel, curItem
     elseif(endOfFrameFile)
       myTermStrNL(String("End Of file"))
       return 
-'      sd.seek(0)
-'      endOfFrameFile := false
     else
       if(ctrPixel < rgbwStripLength)
         frameBuff2[ctrPixel] := tLong
@@ -348,110 +398,6 @@ pub frameRead : r | tLong, ctrPixel, curItem
   
   return
   
-pub frameRead2 : r | tLong, indexPixel
-
-  stepDisp.Out(sdiTwo, 0)
-  stepDisp.Out(sdiZero, 1)
-
-  term.Str(String("************************* Start New frame"))
-  term.tx(13)
-  term.tx(10)
-  term.Str(String("Reading Pixel Data"))
-  term.tx(13)
-  term.tx(10)
-  indexPixel := 0
-  repeat indexPixel from 1 to rgbwStripLength 
-    tLong := \frameReadLong
-    if(endOfFrameFile)
-      term.Str(String("EOF Start Over"))
-      term.tx(13)
-      term.tx(10)
-      \sd.seek(0)
-      endOfFrameFile := false
-      tLong := \frameReadLong
-    if(tLong == frameFieldDelimiter)      ' Pixel Data Done
-      term.Str(String("Found Field Delimiter:"))
-      term.Hex(tLong, 8)
-      term.tx(13)
-      term.tx(10)
-      quit                               ' Move on to next section
-    else
-      frameBuff2[indexPixel-1] := tLong
-
-  term.Str(String("Done reading Pixel Data"))
-  term.tx(13) 
-  term.tx(10)
-  
-  repeat
-    if(tLong <> frameFieldDelimiter)    ' Need to feild delimiter if not found during pixel data read. Picture to big?
-      if(tLong == frameRecordDelimiter)
-        endOfFrameFile := true
-        quit
-      else 
-        tLong := \frameReadLong
-    else
-      quit          
-
-  ifnot(endOfFrameFile)
-    term.Str(String("Reading Pause Time"))
-    term.tx(13)
-    term.tx(10) 
-    framePauseTimer := \frameReadLong
-    term.Str(String("Pause Time:"))
-    term.Dec(framePauseTimer)
-    term.Str(String(":"))
-    term.Hex(framePauseTimer, 8)
-    term.tx(13)
-    term.tx(10)  
-    term.Str(String("Done Reading Pasue Time"))
-    term.tx(13)
-    term.tx(10) 
-      
-    term.Str(String("Reading Should Be Recrod Delimiter"))
-    term.tx(13) 
-    term.tx(10)
-    
-    tLong := \frameReadLong
-    
-    if(tLong == frameRecordDelimiter)
-      term.Str(String("Record Delimiter Found"))
-      term.tx(13)
-      term.tx(10)
-    else
-      stepDisp.Out(sdiTwo, 0)
-      stepDisp.Out(sdiFive, 1)
-  
-      term.Str(String("Record Delimiter NOT Found"))
-      term.tx(13)
-      term.tx(10)
-      term.Str(String("File Corruped Or File Format Not Supported"))
-      term.tx(13)
-      term.tx(10)
-      term.Str(String("Offending HEX: "))
-      term.Hex(tLong, 8)
-      term.Str(String("Offending DEC: "))
-      term.dec(tLong) 
-      term.tx(13)
-      term.tx(10)
-
-  
-  if(endOfFrameFile)
-    term.Str(String("EOF Start Over"))
-    term.tx(13)
-    term.tx(10)
-    \sd.seek(0)
-    endOfFrameFile := false
-    
-  term.Str(String("Sending Frame"))
-  term.tx(13)
-  term.tx(10)
-  longmove(@frameBuff1, @frameBuff2, 4)
-  term.Str(String("Frame Sent"))
-  term.tx(13)
-  term.tx(10)
-  stepDisp.Out(sdiTwo, 0)
-  stepDisp.Out(sdiNine, 1)
-
 '****************************************************************
 '
 '
@@ -472,9 +418,6 @@ pub frameReadLong | ctr, char1
   return frameReadLongmBuff2
         
 '****************************************************************
-'
-'
-'
 pub framePause
   term.Str(String("Lets Pasue for: "))
   term.Dec(framePauseTimer)
@@ -556,7 +499,7 @@ dat
 
   CfgFile               byte    "STARTUP.TXT", 0
 
-'********************************************************************8
+'********************************************************************
 '
 '
 pub read_configuration | check
@@ -594,13 +537,17 @@ dat { configure parser characters and tokens }
                         byte    ".0123456789"
                         byte    "ABCDEFGHIJKLMNOPQRSTUVWXYZ", 0   
   
-  TOKEN_LIST            byte    "FRAMEFILE", 0                   ' FILENAME string
-                        byte    "OPTION", 0                     ' OPTION # value
+  TOKEN_LIST            byte    "STARTUPTYPE", 0                 ' STARTUPTYPE string
+                        byte    "FRAMEFILE", 0                   ' FILENAME string
+                        byte    "FRAMESFILE", 0                  ' FILENAME string
+                        byte    "OPTION", 0                      ' OPTION # value
+                        byte    "REPEATMODE", 0                  ' REPEATMODE # value
+                        byte    "TURNOFFATEND", 0                ' TURNOFFATEND # value
 
                         
 con { enumerated token indexes }
 
-  #0, T_FRAMEFILE, T_OPTION, TOKEN_COUNT 
+  #0, T_STARTUPTYPE, T_FRAMEFILE, T_FRAMESFILE, T_OPTION, T_REPEATMODE, T_TURNOFFATEND, TOKEN_COUNT 
   
 
 pub process_cmd | tidx
@@ -608,10 +555,39 @@ pub process_cmd | tidx
   tidx := parser.get_token_id(parser.token_addr(0))              ' get index of command token
      
   case tidx
-    T_FRAMEFILE : cmd_framefile
-    T_OPTION   : cmd_option
+    T_STARTUPTYPE  : cmd_startuptype
+    T_FRAMEFILE    : cmd_framefile
+    T_FRAMESFILE   : cmd_framesfile
+    T_OPTION       : cmd_option
+    T_REPEATMODE   : cmd_repeatmode
+    T_TURNOFFATEND : cmd_turnoffatend
+'********************************************************************    
+pub cmd_startuptype | tc, p_name
+  
+  tc := parser.token_count
+  if (tc <> 2)                                                  
+    return
 
-
+  p_name := parser.token_addr(1)                             
+  bytefill(@startUpType, 0, 10)                                 
+  bytemove(@startUpType, p_name, strsize(p_name) <# 9)          
+'********************************************************************
+pub cmd_repeatmode | tc, p_name
+  
+  tc := parser.token_count
+  if (tc <> 2)                                                  
+    return
+  p_name := parser.token_addr(1)                                
+  bytemove(@repeatMode, p_name, strsize(p_name) <# 1)
+  '********************************************************************
+pub cmd_turnoffatend | tc, p_name
+  
+  tc := parser.token_count
+  if (tc <> 2)                                                  
+    return
+  p_name := parser.token_addr(1)                                
+  bytemove(@turnoffatend, p_name, strsize(p_name) <# 1)   
+'********************************************************************                                          
 pub cmd_framefile | tc, p_name
   
   tc := parser.token_count
@@ -621,8 +597,40 @@ pub cmd_framefile | tc, p_name
   p_name := parser.token_addr(1)                                ' get address of name
   bytefill(@framefile, 0, 13)                                    ' reset
   bytemove(@framefile, p_name, strsize(p_name) <# 12)            ' copy token to filename - 12 chars max  
+'********************************************************************
+pub cmd_framesfile | tc, idx, value, p_name
 
+  tc := parser.token_count
+  if (tc <> 3)                                                  ' syntax = FRAMESFILE # string
+    return
+
+  idx := parser.token_value(1)
+
+  if ((idx < 0) or (idx > 9))                                   ' valid option # 
+    return
     
+'framesfiles[13*framesfilesNum]
+  p_name := parser.token_addr(2)
+'  term.str(string("token :"))
+'  myTermStrNL(p_name)
+'  term.str(string("Length:"))
+'  myTermDecNL(strsize(p_name))
+'  term.str(string("Index :"))
+'  myTermDecNL(idx)
+'  term.str(string("Before:"))
+'  term.dec(strsize(@framesfiles))
+'  term.str(string(" "))
+'  myTermStrNL(@framesfiles)
+  framesFilesSize[idx] := strsize(p_name)
+  idx := idx*13
+  bytefill(@framesfiles[idx], string(" "), 13)
+  bytemove(@framesfiles[idx], p_name, strsize(p_name) <# 12)
+'  term.str(string("After :"))
+'  term.dec(strsize(@framesfiles))
+'  term.str(string(" "))
+'  myTermStrNL(@framesfiles)
+'  myTermStrNL(string("***"))
+'********************************************************************  
 pub cmd_option | tc, idx, value
 
   tc := parser.token_count
@@ -637,13 +645,13 @@ pub cmd_option | tc, idx, value
   option[idx] := 0 #> parser.token_value(2) <# 255              ' set option
 
 
-  
+'********************************************************************  
 pub myTermStrNL(iString)
 
   term.str(iString)
   term.tx(13)
   term.tx(10)
-  
+'********************************************************************  
 pub myTermDecNL(iDec)
 
   term.dec(iDec)
