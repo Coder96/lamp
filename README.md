@@ -75,20 +75,39 @@ The files names need to conform to the dos file name convention.
 
 ## Utilities
 
-In the pbulic flder.
-	index.php	-	will give you an interface to create frames manualy. Also can edit the xml it generates.  
-	xmltohex.php	-	Will convert your xml files to hex.  
-	png2xml.php	-	Make a PNG 16 pixels wide. It will make a animation scrollong up. Outputs XML.  
+public Folder.
+	index.php	-	will give you an interface to create frames manualy. Import xml.  
+
+Util Folder
+	png2xml.php	-	Allows to make an animation from a png file. Outputs XML.  
+	xml2hex.php	-	Will convert your xml files to hex.  
+
+### XML Format  
+
+	<?xml version="1.0" encoding="UTF-8"?>
+	<animation>
+	  <description>Some Decription here.</description>
+	  <frameCounter>1</frameCounter> <!-- This is tolal number of frames -->  
+		<frames>
+			<frame_1> <!-- This block will repeat for each frame -->
+				<picture> <!-- This is each pixel $00_00_00_00, $00_00_00_00, $00_00_00_00, ... -->
+					<![CDATA[ 
+					]]>
+				</picture>
+				<pause>1000</pause> <!-- microseconds -->
+			</frame_1>
+		</frames>
+	</animation>
 
 ## Future Plans
 
 Clean Up code.
 
-Add wifi interface  
-	Send files to SD card.  
-	Edit the STARTUP.TXT  
-	Control What file is being diaplyed. 
-	Stream To the didplay directly. 
++ Add wifi interface  
+    - Send files to SD card.  
+    - Edit the STARTUP.TXT  
+    - Control What file is being diaplyed.  
+    - Stream To the didplay directly.  
 	
 	
 	

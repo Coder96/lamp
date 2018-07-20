@@ -4,7 +4,6 @@ public/tmp/
 *.BIN
 *.binary
 *.side
-*.xml
 *.hex
 *.directory
 *.stl
