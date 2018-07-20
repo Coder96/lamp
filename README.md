@@ -1,6 +1,9 @@
 # lamp
 Code for RGBW led lamp 
 
+#Writeup
+[Writeup on hackster.io](https://www.hackster.io/jason11/rgb-lamp-746ed7)
+
 ## Operation
 
 ### Running Modes
