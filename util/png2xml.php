@@ -1,42 +1,230 @@
 #!/usr/bin/php
 <?php
 
-	$GLOBALS['myapp']['startPixelRow'] = '';
-	$GLOBALS['myapp']['startPixelCollum'] = '';
-	$GLOBALS['myapp']['skipPixelRow'] = '';
-	$GLOBALS['myapp']['skipPixelCollum'] = '';
-	$GLOBALS['myapp']['scrollDirection'] = '';
-	$GLOBALS['myapp']['outputPixelWidth'] = '';
-	$GLOBALS['myapp']['outputPixelHeigth'] = '';
-	$GLOBALS['myapp']['inFileName'] = '';
-	$GLOBALS['myapp']['inFileHandel'] = '';
-	$GLOBALS['myapp']['outFilename'] = '';
-	$GLOBALS['myapp']['outFileHandel'] = '';
+	$GLOBALS['myapp']['default']['outputPixelWidth']  = 16;
+	$GLOBALS['myapp']['default']['outputPixelHeigth'] = 18;
+	$GLOBALS['myapp']['default']['delayMilliSeconds'] = 1000;
+//	$GLOBALS['myapp']['default'][''] = '';
+//	$GLOBALS['myapp']['default'][''] = '';
+	
+	$GLOBALS['myapp']['startPixelRow']			= '';
+	$GLOBALS['myapp']['startPixelCollum']		= '';
+	$GLOBALS['myapp']['skipPixelRow'] 			= '';
+	$GLOBALS['myapp']['skipPixelCollum'] 		= '';
+	$GLOBALS['myapp']['scrollDirection'] 		= '';
+	$GLOBALS['myapp']['outputPixelWidth']		= '';
+	$GLOBALS['myapp']['outputPixelHeigth'] 	= '';
+	$GLOBALS['myapp']['maxFramesToGet'] 		= PHP_INT_MAX;
+	$GLOBALS['myapp']['inFileName']     		= '';
+	$GLOBALS['myapp']['inFileHandel']   		= '';
+	$GLOBALS['myapp']['outFileName']      	= '';
+	$GLOBALS['myapp']['outFileHandel']    	= '';
+	$GLOBALS['myapp']['scriptFileName']   	= '';
+	$GLOBALS['myapp']['scriptFileHandel'] 	= '';
+	$GLOBALS['myapp']['scriptFileFound']  	= false;
+	$GLOBALS['myapp']['scriptCommands']   	= '';
+	
+	$GLOBALS['myapp']['script'] = array();
 	
 	$GLOBALS['myapp']['matrix']['rowCount'] = 0;
 	$GLOBALS['myapp']['matrix']['colCount'] = 0;
 	$GLOBALS['myapp']['matrix']['picture'] = array();
 	$GLOBALS['myapp']['matrix']['frames'] = array();
 	
-	$GLOBALS['myapp']['debug'] = true;
-	
+	$GLOBALS['myapp']['debug'] = false;
+
+//*********************************************************************
+//
+//
+//
+//*********************************************************************
+
 	cliParms();
+
+	if($GLOBALS['myapp']['scriptFileFound']){
+		followScript();
+	} else {
+		
+		readPNG();
+			
+		readDirection();
+			
+		$GLOBALS['myapp']['outFileHandel'] = fopen($GLOBALS['myapp']['outFileName'],'w');
+		if(!$GLOBALS['myapp']['outFileHandel']){
+			writeErr('Failed to open outFileName:'.$GLOBALS['myapp']['outFileName']);
+			exit();
+		}
+
+		xmlOut();
+	}
+	exit();
+//*********************************************************************
+//
+//
+//
+//*********************************************************************
+function readDirection(){
+
+	$curFrame['StopRead'] = false;
+
+	$curFrame = calcStartPixelPoints($curFrame);
+
+	$curFrame['fameCtr'] = 0;
+
+	while($curFrame['StopRead'] == false and $curFrame['fameCtr'] < $GLOBALS['myapp']['maxFramesToGet']){
 	
-	$GLOBALS['myapp']['outFileHandel'] = fopen($GLOBALS['myapp']['outFilename'],'w');
-	if(!$GLOBALS['myapp']['outFileHandel']){
-		writeErr('Failed to open outFilename:'.$GLOBALS['myapp']['outFilename']);
+		readFrame($curFrame);
+		
+		$curFrame = getNextPoints($curFrame);
+		
+		$curFrame['fameCtr']++;
+	}
+}
+//*********************************************************************
+//
+//
+//
+//*********************************************************************
+function followScript(){
+//print("sdssdsdss\n");
+	readScript();
+	processScript();
+}
+//*********************************************************************
+//
+//
+//
+//*********************************************************************
+function processScript(){
+	foreach($GLOBALS['myapp']['script']['cmd'] as $cmd){
+//		print_r($cmd);
+		switch($cmd[0]){
+			case 'debugOn':
+				debugSet(true);
+				break;
+			case 'debugOff':
+				debugSet(false);
+				break;
+			case 'inFileName':
+				if(inFileName($cmd[1])){
+					$GLOBALS['myapp']['matrix']['rowCount'] = 0;
+					$GLOBALS['myapp']['matrix']['colCount'] = 0;
+					$GLOBALS['myapp']['matrix']['picture'] = array();
+					readPNG();
+				} else {
+					writeErr('Script Stoped.  Err:'.$cmd[0].' '.$cmd[1]);
+					exit();
+				}
+				break;
+			case 'outFileName':
+				outFileName($cmd[1]);
+				break;
+			case 'startPixelRow':
+				startPixelRow($cmd[1]);
+				break;
+			case 'startPixelCollum':
+				startPixelCollum($cmd[1]);
+				break;
+			case 'skipPixelRow':
+				skipPixelRow($cmd[1]);
+				break;
+			case 'skipPixelCollum':
+				skipPixelCollum($cmd[1]);
+				break;
+			case 'scrollDirection':
+				if(scrollDirection($cmd[1])){
+					readDirection();
+				} else {
+					writeErr('Script Stoped.  Err:'.$cmd[0].' '.$cmd[1]);
+					exit();
+				}
+				break;
+			case 'outputWidth':
+				outputWidth($cmd[1]);
+				break;
+			case 'outputHeigth':
+				outputHeigth($cmd[1]);
+				break;
+			case 'maxFramesToGet':
+				if(maxFramesToGet($cmd[1])){
+					writeErr('Script Stoped.  Err:'.$cmd[0].' '.$cmd[1]);
+					exit();
+				}
+				break;
+			case 'delayMilliSeconds':
+				delayMilliSeconds($cmd[1]);
+				break;
+			case 'readPNG':
+				readPNG();
+				break;
+			case 'writeXML':
+				xmlOut();
+				$GLOBALS['myapp']['matrix']['frames'] = array();
+				break;
+			case 'getFrame':
+				$curFrame = array();
+				$curFrame['wrkRowTL'] = $GLOBALS['myapp']['startPixelRow'];
+				$curFrame['wrkColTL'] = $GLOBALS['myapp']['startPixelCollum'];
+				readFrame($curFrame);
+				break;
+			default:
+				writeErr('Script Stoped. Unknown Command.'.$cmd[0]);
+				exit();
+				break;
+		}
+		
+	}
+}
+//*********************************************************************
+//
+//
+//
+//*********************************************************************
+function readScript(){
+
+	$data = file($GLOBALS['myapp']['scriptFileName']);
+	if(!$data){
+		writeErr('Failed to open scriptFileName:'.$GLOBALS['myapp']['scriptFileName']);
 		exit();
 	}
 	
-	$im = new Imagick($GLOBALS['myapp']['inFileName']);
-	$it = $im->getPixelIterator();
+	foreach($data as $line){
+		if(empty(trim($line)) or substr(trim($line),0,1) == ';'){
+			$GLOBALS['myapp']['script']['Comment'][] = $line;
+		} else {
+			$GLOBALS['myapp']['script']['cmd'][] = explode('=',trim($line));
+		}
 	
-	//
-	// Build a matrix for the entire picture.
-	//
-	// The counts start at 1 
-	// The picture array will start at 0
-	//
+	}
+	
+}
+//*********************************************************************
+//
+//
+//
+//*********************************************************************
+function readFrame($curFrame){
+	
+	$GLOBALS['myapp']['matrix']['frames'][] = getPixelBlock($curFrame);
+}
+//*********************************************************************
+//
+//
+//
+//
+// Build a matrix for the entire picture.
+//
+// The counts start at 1 
+// The picture array will start at 0
+//
+//*********************************************************************
+function readPNG(){
+
+	$im = new Imagick($GLOBALS['myapp']['inFileName']);
+	$it = $im->getPixelIterator();	
+	
+	$GLOBALS['myapp']['matrix']['picture'] = array();
+
 	$GLOBALS['myapp']['matrix']['rowCount'] = 0;
 	foreach($it as $row => $pixels) {
 		$GLOBALS['myapp']['matrix']['colCount'] = 0;
@@ -47,23 +235,8 @@
 		}
 		$GLOBALS['myapp']['matrix']['rowCount']++;
 	}
-		
-	$curFrame['StopRead'] = false;
 
-	$curFrame = calcStartPixelPoints($curFrame);
-//	writeErr(print_r($curFrame,true));
-	
-	while($curFrame['StopRead'] == false){
-		$GLOBALS['myapp']['matrix']['frames'][] = getPixelBlock($curFrame);
-		$curFrame = getNextPoints($curFrame);
-//		writeErr(print_r($curFrame,true));
-
-	}	
-	
-	xmlOut();
-	
-	exit();
-
+}
 //*********************************************************************
 //
 //
@@ -222,14 +395,14 @@ function xmlOut(){
 		$frameCounter++;
 		foreach($frame as $pixel){
 			$frameHexString .= "$pixel, ";
-		}	
+		}
 		$frameHexString = substr($frameHexString, 0, -2);
 		$xmlString2 .= '	<frame_' . $frameCounter . '> <!-- This block will repeat for each frame -->
 			<picture> <!-- This is each pixel $00_00_00_00, $00_00_00_00, $00_00_00_00, ... -->
 				<![CDATA[ '. $frameHexString . '
 				]]>
 			</picture>
-			<pause>1000</pause> <!-- microseconds -->
+			<pause>'. $GLOBALS['myapp']['delayMilliSeconds'] .'</pause> <!-- microseconds -->
 		</frame_' . $frameCounter . '>
 	';
 		$frameHexString = '';
@@ -244,14 +417,13 @@ function xmlOut(){
 	</frames>
 </animation>';
 
-	$GLOBALS['myapp']['outFileHandel'] = fopen($GLOBALS['myapp']['outFilename'],"w");
+	$GLOBALS['myapp']['outFileHandel'] = fopen($GLOBALS['myapp']['outFileName'],"w");
 	if(!$GLOBALS['myapp']['outFileHandel']){
-		writeErr('Failed to open outfile:'. $GLOBALS['myapp']['outFilename']);
+		writeErr('Failed to open outfile:'. $GLOBALS['myapp']['outFileName']);
 	} else {
 		fwrite($GLOBALS['myapp']['outFileHandel'], $xmlString);
 		fclose($GLOBALS['myapp']['outFileHandel']);
 	}
-	
 }
 //*********************************************************************
 //
@@ -330,92 +502,116 @@ function cliParms(){
 
 	$longopts  = array(
 		'help',
+		'scriptFileHelp',
+		'debugOn',
 		'startPixelRow::',
 		'startPixelCollum::',
 		'skipPixelCollum::',
+		'delayMilliSeconds::',
 		'skipPixelRow::',
 		'scrollDirection::',
-		'outputWidth::',
-		'outputHeigth::',
+		'outputPixelWidth::',
+		'outputPixelHeigth::',
+		'maxFramesToGet::',
 		'inFileName:',
-		'outFilename::',
+		'outFileName::',
+		'scriptFileName::',
            
 		);
 	$options = getopt($shortopts, $longopts);
 //	var_dump($options);
 
+	if(isset($options['debugOn'])){
+		debugSet(true);
+	} else {
+		debugSet(false);
+	}
 
 	if(isset($options['outputPixelWidth'])){
-		$GLOBALS['myapp']['outputPixelWidth'] = intval($options['outputPixelWidth']);
+		outputWidth($options['outputPixelWidth']);
 	} else {
-		$GLOBALS['myapp']['outputPixelWidth'] = 16;
+		outputWidth($GLOBALS['myapp']['default']['outputPixelWidth']);
 	}
 	
 	if(isset($options['outputPixelHeigth'])){
-		$GLOBALS['myapp']['outputPixelHeigth'] = intval($options['outputPixelHeigth']);
+		outputHeigth($options['outputPixelHeigth']);
 	} else {
-		$GLOBALS['myapp']['outputPixelHeigth'] = 18;
+		outputHeigth($GLOBALS['myapp']['default']['outputPixelHeigth']);
 	}
 	
-	
-	if(isset($options['startPixelRow'])){
-		$GLOBALS['myapp']['startPixelRow'] = intval($options['startPixelRow']);
+	if(isset($options['maxFramesToGet'])){
+		maxFramesToGet($options['maxFramesToGet']);
 	} else {
-		$GLOBALS['myapp']['startPixelRow'] = 0;
+		maxFramesToGet(PHP_INT_MAX);
+	}
+			
+	if(isset($options['startPixelRow'])){
+		startPixelRow($options['startPixelRow']);
+	} else {
+		startPixelRow(0);
 	}
 
 	if(isset($options['startPixelCollum'])){
-		$GLOBALS['myapp']['startPixelCollum'] = intval($options['startPixelCollum']);
+		startPixelCollum($options['startPixelCollum']);
 	} else {
-		$GLOBALS['myapp']['startPixelCollum'] = 0;
+		startPixelCollum(0);
 	}
 	
 	if(isset($options['skipPixelRow'])){
-		$GLOBALS['myapp']['skipPixelRow'] = intval($options['skipPixelRow']);
+		skipPixelRow(intval($options['skipPixelRow']));
 	} else {
-		$GLOBALS['myapp']['skipPixelRow'] = 0;
+		skipPixelRow(0);
 	}
 	
 	if(isset($options['skipPixelCollum'])){
-		$GLOBALS['myapp']['skipPixelCollum'] = intval($options['skipPixelCollum']);
+		skipPixelCollum($options['skipPixelCollum']);
 	} else {
-		$GLOBALS['myapp']['skipPixelCollum'] = 0;
+		skipPixelCollum(0);
 	}
 
-
-	$allowedDirections = array('lr','rl','tb','bt');
-	if(isset($options['scrollDirection'])){
-		$options['scrollDirection'] = strtolower($options['scrollDirection']);
-		if(in_array($options['scrollDirection'],$allowedDirections)){
-			$GLOBALS['myapp']['scrollDirection'] = $options['scrollDirection'];
-		} else {
-			$error = true;
-			writeErr('Unknown Direction: '. $options['scrollDirection']);
-		}
+	if(isset($options['delayMilliSeconds'])){
+		delayMilliSeconds($options['delayMilliSeconds']);
 	} else {
-		$GLOBALS['myapp']['scrollDirection'] = "lr";
+		delayMilliSeconds($GLOBALS['myapp']['default']['delayMilliSeconds']);
+	}
+	
+
+	if(isset($options['scrollDirection'])){
+		scrollDirection($options['scrollDirection']);
+	} else {
+		scrollDirection('lr');
 	}
 	
 	if(isset($options['inFileName'])){
-		if(is_file($options['inFileName'])){
-			$GLOBALS['myapp']['inFileName'] = $options['inFileName'];
-		} else {
+		if(!inFileName($options['inFileName'])){
 			$error = true;
 			writeErr('--inFileName file not found:'.$options['inFileName']);	
 		}
 	} else {
-		$error = true;
-		writeErr('--inFileName required');
+		$GLOBALS['myapp']['inFileName'] = 'php://STDIN';
 	}
 
-	if(isset($options['outFilename'])){
-		if($options['outFilename'] == 'STDOUT'){
-			$GLOBALS['myapp']['outFilename'] = 'php://STDOUT';
+	if(isset($options['outFileName'])){
+		if($options['outFileName'] == 'STDOUT'){
+			outFileName('php://STDOUT');
 		} else {
-			$GLOBALS['myapp']['outFilename'] = $options['outFilename'];
+			outFileName($options['outFileName']);
 		}
 	} else {
-		$GLOBALS['myapp']['outFilename'] = 'php://STDOUT';
+		outFileName('php://STDOUT');
+	}
+	
+	if(isset($options['scriptFileName'])){
+		if(is_file($options['scriptFileName'])){
+			$GLOBALS['myapp']['scriptFileName'] = $options['scriptFileName'];
+			$GLOBALS['myapp']['scriptFileFound'] = true;
+		} else {
+			$GLOBALS['myapp']['scriptFileName'] = '';
+			$error = false;
+			writeErr('--scriptFileName file not found:'.$options['scriptFileName']);	
+		}
+	} else {
+		$GLOBALS['myapp']['scriptFileName'] = '';
 	}
 	
 	if($GLOBALS['myapp']['debug'] == true){
@@ -424,12 +620,16 @@ function cliParms(){
 		'--startPixelCollum  '. $GLOBALS['myapp']['startPixelCollum']  ."\n".
 		'--skipPixelRow      '. $GLOBALS['myapp']['skipPixelRow']      ."\n".
 		'--skipPixelCollum   '. $GLOBALS['myapp']['skipPixelCollum']   ."\n".
+		'--delayMilliSeconds '. $GLOBALS['myapp']['delayMilliSeconds'] ."\n".
 		'--scrollDirection   '. $GLOBALS['myapp']['scrollDirection']   ."\n".
 		'--outputPixelWidth  '. $GLOBALS['myapp']['outputPixelWidth']  ."\n".
 		'--outputPixelHeigth '. $GLOBALS['myapp']['outputPixelHeigth'] ."\n".
+		'--maxFramesToGet    '.	$GLOBALS['myapp']['maxFramesToGet']    ."\n".
 		'--inFileName        '. $GLOBALS['myapp']['inFileName']        ."\n".
 //		''. $GLOBALS['myapp']['inFileHandel'] = '';
-		'--outFilename       '. $GLOBALS['myapp']['outFilename']       ."\n"
+		'--outFileName       '. $GLOBALS['myapp']['outFileName']       ."\n".
+		'--scriptFileName    '. $GLOBALS['myapp']['scriptFileName']    ."\n".
+		'  scriptFileFound   '. $GLOBALS['myapp']['scriptFileFound']   ."\n"
 //		''. $GLOBALS['myapp']['outFileHandel'] = '';
 		
 //		'rowCount'. $GLOBALS['myapp']['matrix']['rowCount'] ."\n".
@@ -439,56 +639,213 @@ function cliParms(){
 		);
 	}
 
-	if(isset($options['h']) or isset($options['help']) or $error){
+	if(isset($options['h']) or isset($options['help']) or $error or isset($options['scriptFileHelp'])){
+
 		if($error){
 			writeErr("Error exiting.");
 		}
 		
-		echo('
+		if(isset($options['h']) or isset($options['help']) ){
+			writeErr('
 
  Options:
 
-   --inFileName        Full Path or STDIN.
+   --inFileName         Default STDIN.
+   --outFileName        Default STDOUT.
    
-   --outFilename       Full Path.  Default STDOUT.
+   --startPixelRow      Start Row. This is absolute poxition.    Default 0
+   --startPixelCollum   Start Collum. This is absolute poxition. Default 0
+
+   --skipPixelRow       Pixels to skip between frames. Default 0
+   --skipPixelCollum    Pixels to skip between frames. Default 0
    
-   --startPixelRow     Start Row. This is absolute poxition.    Default 0
-   --startPixelCollum  Start Collum. This is absolute poxition. Default 0
+   --delayMilliSeconds  Delay in milli Seconds. Default '.$GLOBALS['myapp']['default']['delayMilliSeconds'].'	
 
-   --skipPixelRow      Pixels to skip between frames. Default 0
-   --skipPixelCollum   Pixels to skip between frames. Default 0
-
-   --scrollDirection   Direction for the frame to move. Default lr
+   --scrollDirection    Direction for the frame to move. Default lr
      lr  Left to Right. Start Pixel Upper Left.
      rl  Right to Left. Start Pixel Upper Right.
      tb  Top to Bottom. Start Pixel Upper Left.
      bt  Bottom to Top. Start Pixel Lower Left.
 
-   --outputPixelWidth  Default 16
-   --outputPixelHeigth Default 18
+   --outputPixelWidth  Default '.$GLOBALS['myapp']['default']['outputPixelWidth'].'
+   --outputPixelHeigth Default '.$GLOBALS['myapp']['default']['outputPixelHeigth'].'
+   
+   --maxFramesToGet    Set this to only grab cirtan number of frames. Default 1 to '. number_format(PHP_INT_MAX, 0) .'. The max is depentand on you architecture.
    
    -h      Help Screen.
    --help  Help Screen.
+   
+   --scriptFileName   
+   --scriptFileHelp   Scripting details.
+
+   $'.__FILE__.' --delayMilliSeconds=2000
+
+');
+		}
+		if(isset($options['scriptFileHelp'])){
+			writeErr('
+
+debugOn						To start debug messages
+debugOff					To Stop debug messages
+
+inFileName        File name for the PNG
+outFileName				File name for the XML data. Data will be cleard after written.
+
+startPixelRow
+startPixelCollum
+									These will act as normal when used with scrollDirection
+skipPixelCollum
+skipPixelRow
+
+
+scrollDirection 	Must give a direction.  
+
+delayMilliSeconds Delay in milli Seconds.
+
+outputWidth		
+outputHeigth
+
+maxFramesToGet   This is for the scrollDirection
+
+getFrame         This will use the startPixelRow and startPixelCollum values.
+
+readPNG          This will read what is in inFileName. removes what is currently in memory.
+writeXML         This will write the xml to what is in outFileName. Clear data in memory.
 
 
 ');
-
+		}
 		exit();
 	
 	}
 }
-//*****************************************
+//*********************************************************************
+//
+//
+//
+//*********************************************************************
 function writeErr($line){
 	fwrite(STDERR,"$line\n");
 }
+//*********************************************************************
+//
+//
+//
+//*********************************************************************
+function debugSet($set){
 
+		$GLOBALS['myapp']['debug'] = $set;
+}
+//*********************************************************************
+//
+//
+//
+//*********************************************************************
+function inFileName($iFile){
 
-
-
-
-
-
-
+		if(is_file($iFile)){
+			$GLOBALS['myapp']['inFileName'] = $iFile;
+		} else {
+			writeErr('inFileName file not found:'.$iFile);	
+			return false;
+		}
+	return true;
+}
+//*********************************************************************
+//
+//
+//
+//*********************************************************************
+function outFileName($iFile){
+	$GLOBALS['myapp']['outFileName'] = $iFile;
+}
+//*********************************************************************
+//
+//
+//
+//*********************************************************************
+function startPixelRow($iRow){
+	$GLOBALS['myapp']['startPixelRow'] = intval($iRow);
+}
+//*********************************************************************
+//
+//
+//
+//*********************************************************************
+function startPixelCollum($iCollum){
+	$GLOBALS['myapp']['startPixelCollum'] = intval($iCollum);
+}
+//*********************************************************************
+//
+//
+//
+//*********************************************************************
+function skipPixelRow($iRow){
+	$GLOBALS['myapp']['skipPixelRow']  = intval($iRow);
+}
+//*********************************************************************
+//
+//
+//
+//*********************************************************************
+function skipPixelCollum($iCollum){
+	$GLOBALS['myapp']['skipPixelCollum'] = intval($iCollum);
+}
+//*********************************************************************
+//
+//
+//
+//*********************************************************************
+function scrollDirection($iDirection){
+	$allowedDirections = array('lr','rl','tb','bt');
+	$iDirection = strtolower($iDirection);
+	if(in_array($iDirection,$allowedDirections)){
+		$GLOBALS['myapp']['scrollDirection'] = $iDirection;
+	} else {
+		$GLOBALS['myapp']['scrollDirection'] = 'lr';
+		writeErr('Bad scrollDirection.');
+		return false;
+	}
+	return true;
+}
+//*********************************************************************
+//
+//
+//
+//*********************************************************************
+function outputWidth($iWidth){
+	$GLOBALS['myapp']['outputPixelWidth'] = intval($iWidth);
+}
+//*********************************************************************
+//
+//
+//
+//*********************************************************************
+function outputHeigth($iHeigth){
+	$GLOBALS['myapp']['outputPixelHeigth'] = intval($iHeigth);
+}
+//*********************************************************************
+//
+//
+//
+//*********************************************************************
+function maxFramesToGet($iFrames){
+	if(intval($iFrames) < 1){
+		$GLOBALS['myapp']['maxFramesToGet'] = PHP_INT_MAX;
+		return false;
+	} else {
+		$GLOBALS['myapp']['maxFramesToGet'] = intval($iFrames);
+	}
+	return true;		
+}
+//*********************************************************************
+//
+//
+//
+//*********************************************************************
+function delayMilliSeconds($iDealy){
+	$GLOBALS['myapp']['delayMilliSeconds'] = intval($iDealy);
+}
 
 
 

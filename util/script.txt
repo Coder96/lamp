@@ -1,0 +1,34 @@
+;
+; Call as:
+;
+;./png2xml.php --scriptFileName=script.txt
+; 
+; This is the same as:
+;
+;./png2xml.php --inFileName=test/duck.png --skipPixelCollum=16 --outFileName=test/lr.xml --debugOn
+;
+debugOn
+;debugOff
+inFileName=test/duck.png
+outFileName=test/lr.xml
+
+skipPixelCollum=16
+scrollDirection
+
+writeXML
+
+
+
+
+;startPixelRow
+;startPixelCollum
+						
+;skipPixelRow
+
+;outputWidth		
+;outputHeigth
+
+;maxFramesToGet
+
+;getFrame
+

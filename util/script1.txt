@@ -1,0 +1,37 @@
+;
+; Call as:
+;
+;./png2xml.php --scriptFileName=script1.txt
+; 
+;
+;	This will turn 4 frames into 5
+;
+debugOn
+;debugOff
+
+inFileName=test/duck.png
+outFileName=test/lr.xml
+
+readPNG
+
+skipPixelCollum=16
+scrollDirection=lr
+
+
+startPixelRow=0
+startPixelCollum=0
+					
+getFrame
+
+writeXML
+
+
+;skipPixelRow=4
+
+;outputWidth=20
+;outputHeigth=20
+
+;maxFramesToGet=10
+
+;getFrame
+
