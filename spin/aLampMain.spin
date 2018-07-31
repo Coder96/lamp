@@ -131,6 +131,8 @@ pub main | index
       multiFileMode
       
   myTermStrNL(string("*********************** System Stoping."))
+  stepDisp.Out(sdiZero, 0)
+  stepDisp.Out(sdiZero, 1)
   
   repeat
     waitcnt(0)
@@ -204,6 +206,10 @@ pub start | errorNumber, errorString, startStep
   term.start(RXpin, TXpin, %0000, Baudrate)
   stepDisp.Out(sdiTwo, 0)
   stepDisp.Out(sdiAllOff, 1)
+  
+  myTermStrNL(string(" "))
+  myTermStrNL(string(" "))
+  myTermStrNL(string(" "))
   
   myTermStrNL(string("IO Cleared "))  
   
@@ -296,6 +302,9 @@ pub OpenFile(p_str, mode) : r | errorNumber
       return true                                                
     else
       myTermStrNL(String("File Not Opened"))
+      term.Str(String("Error Code:"))
+      term.dec(errorNumber)
+      myTermStrNL(String(" "))
       stepDisp.Out(sdiOne, 0)
       stepDisp.Out(sdiFour, 1)                                             
       return false
@@ -348,6 +357,9 @@ pub frameRead : r | tLong, ctrPixel, curItem
     
     if(tLong == frameFieldDelimiter)
       myTermStrNL(String("Found Field Delimiter"))
+      term.Str(String("Frame Length:"))
+      term.dec(ctrPixel)
+      myTermStrNL(String(" "))
       if(curItem == 1)        ' Expecting Last Section to be Pixel Data
         framePauseTimer := \frameReadLong
         mytermStrNL(String("Reading Pause Time"))
